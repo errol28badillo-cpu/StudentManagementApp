@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ),
+      home: const MyHomePage(title: 'Errol Student Grade'),
+    );
+  }
+}
+
+class Student {
+  String name;
+  String id;
+  Student({required this.name, required this.id});
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+  final String title;
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final List<Student> _students = [];
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _idController = TextEditingController();
+
+  void _addOrEditStudent({Student? student, int? index}) {
+    if (student != null) {
+      _nameController.text = student.name;
+      _idController.text = student.id;
+    } else {
+      _nameController.clear();
+      _idController.clear();
+    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(student == null ? 'Add Student' : 'Edit Student'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: _idController,
+              decoration: const InputDecoration(labelText: 'Grade'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                if (student == null) {
+                  _students.add(Student(
+                    name: _nameController.text,
+                    id: _idController.text,
+                  ));
+                } else if (index != null) {
+                  _students[index] = Student(
+                    name: _nameController.text,
+                    id: _idController.text,
+                  );
+                }
+              });
+              Navigator.pop(context);
+            },
+            child: Text(student == null ? 'Add' : 'Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteStudent(int index) {
+    setState(() {
+      _students.removeAt(index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: ListView.builder(
+        itemCount: _students.length,
+        itemBuilder: (context, index) {
+          final student = _students[index];
+          return ListTile(
+            title: Text(student.name),
+            subtitle: Text('ID: ${student.id}'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _addOrEditStudent(student: student, index: index),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteStudent(index),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addOrEditStudent(),
+        tooltip: 'Add Student',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
