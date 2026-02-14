@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'student.dart';
+import 'student_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,12 +37,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Student {
-  String name;
-  String id;
-  Student({required this.name, required this.id});
-}
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -49,9 +45,24 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Student> _students = [];
+  final StudentManager _studentManager = StudentManager();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _idController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  List<Student> _displayedStudents = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _displayedStudents = _studentManager.students;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _displayedStudents = _studentManager.searchStudents(_searchController.text);
+    });
+  }
 
   void _addOrEditStudent({Student? student, int? index}) {
     if (student != null) {
@@ -74,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(labelText: 'Grade'),
+              decoration: const InputDecoration(labelText: 'ID'),
             ),
           ],
         ),
@@ -89,16 +100,17 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () {
               setState(() {
                 if (student == null) {
-                  _students.add(Student(
+                  _studentManager.addStudent(Student(
                     name: _nameController.text,
                     id: _idController.text,
                   ));
                 } else if (index != null) {
-                  _students[index] = Student(
+                  _studentManager.editStudent(index, Student(
                     name: _nameController.text,
                     id: _idController.text,
-                  );
+                  ));
                 }
+                _displayedStudents = _studentManager.searchStudents(_searchController.text);
               });
               Navigator.pop(context);
             },
@@ -111,7 +123,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _deleteStudent(int index) {
     setState(() {
-      _students.removeAt(index);
+      _studentManager.deleteStudent(index);
+      _displayedStudents = _studentManager.searchStudents(_searchController.text);
     });
   }
 
@@ -121,28 +134,44 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemCount: _students.length,
-        itemBuilder: (context, index) {
-          final student = _students[index];
-          return ListTile(
-            title: Text(student.name),
-            subtitle: Text('ID: ${student.id}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _addOrEditStudent(student: student, index: index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteStudent(index),
-                ),
-              ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search',
+                prefixIcon: Icon(Icons.search),
+              ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _displayedStudents.length,
+              itemBuilder: (context, index) {
+                final student = _displayedStudents[index];
+                return ListTile(
+                  title: Text(student.name),
+                  subtitle: Text('ID: ${student.id}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _addOrEditStudent(student: student, index: index),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteStudent(index),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditStudent(),
